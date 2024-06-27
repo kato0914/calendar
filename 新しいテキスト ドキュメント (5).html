@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets カレンダーアプリ</title>
+    <style>
+        .calendar {
+            width: 100%;
+            max-width: 800px;
+            margin: auto;
+            text-align: center;
+        }
+        .header {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .days {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .day {
+            width: calc(14.28%);
+            padding: 20px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .day.selected {
+            background-color: #f0f0f0;
+        }
+        .event-form {
+            margin-top: 20px;
+        }
+        #events {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar">
+        <div class="header" id="currentMonth"></div>
+        <div class="days" id="days"></div>
+        <div class="event-form">
+            <input type="text" id="eventInput" placeholder="予定を入力">
+            <button onclick="addEvent()">追加</button>
+        </div>
+        <div id="events"></div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let selectedDate = null;
+        const API_URL = 'https://script.google.com/macros/s/AKfycbx829uzV77nFcEncD0OoXqhXyFDrQyj2Rs4no1vG3X_MXHVQ4rEaL-VjK8Fcmzxxba-/exec';
+
+        function updateCalendar() {
+            const month = currentDate.getMonth();
+            const year = currentDate.getFullYear();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            const daysElement = document.getElementById('days');
+            daysElement.innerHTML = '';
+
+            for (let i = 0; i < firstDay; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'day';
+                daysElement.appendChild(dayElement);
+            }
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'day';
+                dayElement.textContent = i;
+                dayElement.onclick = (event) => selectDate(event, i);
+                daysElement.appendChild(dayElement);
+            }
+
+            document.getElementById('currentMonth').textContent = `${year}年${month + 1}月`;
+        }
+
+        function selectDate(event, day) {
+            selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            document.querySelectorAll('.day').forEach(el => el.classList.remove('selected'));
+            event.target.classList.add('selected');
+            fetchEvents();
+        }
+
+        function addEvent() {
+            if (!selectedDate) return;
+            const eventText = document.getElementById('eventInput').value;
+            if (!eventText) return;
+
+            const dateString = selectedDate.toISOString().split('T')[0];
+            fetch(`${API_URL}?action=addEvent&date=${dateString}&event=${encodeURIComponent(eventText)}`, {mode: 'no-cors'})
+                .then(() => {
+                    document.getElementById('eventInput').value = '';
+                    fetchEvents();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function fetchEvents() {
+            if (!selectedDate) return;
+            const dateString = selectedDate.toISOString().split('T')[0];
+            fetch(`${API_URL}?action=getEvents&date=${dateString}`)
+                .then(response => response.json())
+                .then(events => {
+                    const eventsElement = document.getElementById('events');
+                    eventsElement.innerHTML = '';
+                    events.forEach(event => {
+                        const eventElement = document.createElement('div');
+                        eventElement.textContent = event;
+                        eventsElement.appendChild(eventElement);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        updateCalendar();
+    </script>
+</body>
+</html>
