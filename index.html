@@ -52,7 +52,7 @@
     <script>
         let currentDate = new Date();
         let selectedDate = null;
-        const API_URL = 'https://script.google.com/macros/s/AKfycbx829uzV77nFcEncD0OoXqhXyFDrQyj2Rs4no1vG3X_MXHVQ4rEaL-VjK8Fcmzxxba-/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxyW2yuqg_0eepMDfMSGhQL8Vd9qyReVW1J_djlCGhr2LaM_iXkC2ERs3NEQiTUEZFi/exec';
 
         function updateCalendar() {
             const month = currentDate.getMonth();
@@ -92,7 +92,8 @@
             const eventText = document.getElementById('eventInput').value;
             if (!eventText) return;
 
-            const dateString = selectedDate.toISOString().split('T')[0];
+            // 日付をUTCで処理
+            const dateString = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate())).toISOString().split('T')[0];
             fetch(`${API_URL}?action=addEvent&date=${dateString}&event=${encodeURIComponent(eventText)}`, {mode: 'no-cors'})
                 .then(() => {
                     document.getElementById('eventInput').value = '';
@@ -103,7 +104,7 @@
 
         function fetchEvents() {
             if (!selectedDate) return;
-            const dateString = selectedDate.toISOString().split('T')[0];
+            const dateString = new Date(Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate())).toISOString().split('T')[0];
             fetch(`${API_URL}?action=getEvents&date=${dateString}`)
                 .then(response => response.json())
                 .then(events => {
